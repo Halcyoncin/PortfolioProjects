@@ -42,6 +42,15 @@ from Portfolio_project..CovidDeaths
 group by location, population
 order by PercentPopulationInfected desc
 
+
+Select location, population, date, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as PercentPopulationInfected
+from Portfolio_project..CovidDeaths
+--where location like '%states%'
+group by location, population, date
+order by PercentPopulationInfected desc
+
+
+
 --showing countries with highest death count per population
 --changing(casting) total_deaths from numeric to int
 
@@ -49,6 +58,17 @@ Select location, MAX(cast(total_deaths as int)) as TotalDeathCount
 From Portfolio_project..CovidDeaths
 --where location like '%states%'
 where continent is not null
+group by location
+order by TotalDeathCount desc
+
+--removing these as they are not included in some queries and we want to stay consistent
+--European Union is part of Europe
+
+Select location, MAX(cast(total_deaths as int)) as TotalDeathCount
+From Portfolio_project..CovidDeaths
+--where location like '%states%'
+where continent is null
+and location not in ('World', 'European Union', 'International')
 group by location
 order by TotalDeathCount desc
 
