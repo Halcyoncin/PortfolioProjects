@@ -1,0 +1,151 @@
+--initial cleaning in Excel
+	--removed size info from pizza_id column to create pizza_type column,
+	--used VLOOKUP to add prices to the order_details table to create pizza_price column, 
+	--summed up the prices per pizza order to create sum_pizza column,
+	--created pizza size column
+
+
+--creating a view and joining the orders table and the order_details table
+
+Create view all_orders as
+select order_details_id, o.order_id, pizza_id, pizza_type, size, quantity, pizza_price, sum_pizza, date, time
+from mavenpizza.dbo.orders as o
+join mavenpizza.dbo.order_details as d
+on d.order_id = o.order_id
+
+
+--have a couple null columns in imported dataset so I'm dropping them
+
+ALTER TABLE mavenpizza.dbo.order_details
+DROP COLUMN F9, F10;
+
+
+--calculating total revenue
+
+select sum(sum_pizza)
+from all_orders
+
+--total revenue is $817860
+
+--calculating total number of pizzas sold
+select sum(quantity)
+from all_orders
+
+--total number of pizzas made:  49574
+
+
+--calculating the total number of orders
+select count(distinct order_id)
+from all_orders
+
+--total number of orders:  21350
+
+
+--adding day_of_week column, hour column, month column to all_orders 
+alter view all_orders as
+select order_details_id, o.order_id, pizza_id, pizza_type, size, quantity, pizza_price, sum_pizza, 
+	date, time, DATENAME(weekday, date) as day_of_week, DATEPART(hour, time) as hour, DATEPART(month, date) as month
+from mavenpizza.dbo.orders as o
+join mavenpizza.dbo.order_details as d
+on d.order_id = o.order_id
+
+--Which day of the week has the most orders?
+select day_of_week, count(order_id) as num_orders
+from all_orders
+group by day_of_week
+order by count(order_id) desc;
+
+--Friday has the most orders, followed by Saturday
+
+--Which day of the week has the most revenue?
+select day_of_week, round(sum(sum_pizza), 2) as total_revenue
+from all_orders
+group by day_of_week
+order by round(sum(sum_pizza), 2) desc;
+
+--Friday has the most revenue, followed by Thursday 
+
+--What are the best and worst selling pizzas?
+select pizza_type, count(pizza_type) as num_pizzas, round(sum(sum_pizza), 2) as pizza_rev
+from all_orders
+group by pizza_type
+order by 3 desc;
+
+--Thai chicken, Barbecue Chicken, and California chicken have the greatest revenue; Brie Carre, Green garden and Spinach supreme are the least.
+
+--What is the average order value?
+With t1 as (
+	Select order_id, sum(sum_pizza) as total_order
+	from all_orders
+	group by order_id)
+select round(avg(total_order), 2)
+from t1
+
+--average order value is $38.31
+
+
+--What is the busiest time of day?
+
+select hour, count(*) as num_orders
+from all_orders
+group by hour
+--having count(*) > 4000
+order by 2 desc;
+
+--12PM to 1PM is the busiest, followed by 1PM to 2PM.  The least busy times are from 9AM to 10AM, and 10AM to 11AM. 
+
+
+--What are the busiest months?
+
+select month, count(*) as num_orders
+from all_orders
+group by month
+order by count(*) desc;
+
+--July, May are the busiest months; September and October are the least busiest.
+
+
+--what size pizzas sell the most, and have the most revenue?
+select size, count(*) as num_size, round(sum(sum_pizza), 2) as revenue
+from all_orders
+group by size
+order by 2 desc;
+
+--large size pizzas sell the best; xxl pizzas don't sell as well (large size brought in $37519, XXL only $1007 (only 28 XXL pizzas sold).
+
+
+--Figuring out the peak hours and days
+select day_of_week, hour, sum(quantity) as sum_quantity
+from all_orders
+group by day_of_week, hour
+order by hour
+
+
+--what is the average # pizzas sold per day?
+
+with t1 as (select date, sum(quantity) as pizzas_made_daily
+from all_orders
+group by date)
+select round(avg(pizzas_made_daily), 0)
+from t1
+
+--average number of pizzas sold per day is 138.
+
+
+--What is the average daily revenue?
+
+With t1 as 
+(select date, sum(sum_pizza) as sum
+from all_orders
+group by date)
+select round(avg(sum), 2)
+from t1
+
+--Average daily revenue is $2284.53
+
+
+
+/*Insights:
+-Consider dropping the pizzas with the least amount of revenue
+-Optimize staffing between 12PM and 2PM Mondays through Fridays as those are the peak timess
+-Very little revenue is made between the hours of 9AM to 11AM and 11PM to 12PM, so consider opening from 11AM to 11PM */
