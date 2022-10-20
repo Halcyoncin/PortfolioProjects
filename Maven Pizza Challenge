@@ -1,3 +1,6 @@
+--The Maven Pizza Challenge info can be found at: https://www.mavenanalytics.io/blog/maven-pizza-challenge
+
+
 --initial cleaning in Excel
 	--removed size info from pizza_id column to create pizza_type column,
 	--used VLOOKUP to add prices to the order_details table to create pizza_price column, 
